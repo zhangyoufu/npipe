@@ -179,6 +179,7 @@ func newOverlapped() (*syscall.Overlapped, error) {
 // This function returns the number of bytes transferred by the operation and an error code if
 // applicable (nil otherwise).
 func waitForCompletion(handle syscall.Handle, overlapped *syscall.Overlapped) (uint32, error) {
+	AddEvent("WaitForSingleObject")
 	_, err := syscall.WaitForSingleObject(overlapped.HEvent, syscall.INFINITE)
 	if err != nil {
 		return 0, err
@@ -206,12 +207,17 @@ func dial(address string, timeout uint32) (*PipeConn, error) {
 			// badly formatted pipe name
 			return nil, badAddr(address)
 		}
+		if err == syscall.Errno(6) {
+			time.Sleep(5 * time.Second)
+			 Dump()
+		}
 		return nil, err
 	}
 	pathp, err := syscall.UTF16PtrFromString(address)
 	if err != nil {
 		return nil, err
 	}
+	AddEvent("syscall.CreateFile")
 	handle, err := syscall.CreateFile(pathp, syscall.GENERIC_READ|syscall.GENERIC_WRITE,
 		uint32(syscall.FILE_SHARE_READ|syscall.FILE_SHARE_WRITE), nil, syscall.OPEN_EXISTING,
 		syscall.FILE_FLAG_OVERLAPPED, 0)
@@ -337,6 +343,7 @@ func (l *PipeListener) Close() error {
 		if err != nil {
 			return err
 		}
+		AddEvent("syscall.CloseHandle")
 		err = syscall.CloseHandle(l.handle)
 		if err != nil {
 			return err
@@ -351,11 +358,13 @@ func (l *PipeListener) Close() error {
 		if err := cancelIoEx(l.acceptHandle, l.acceptOverlapped); err != nil {
 			return err
 		}
+		AddEvent("syscall.CloseHandle")
 		err := syscall.CloseHandle(l.acceptOverlapped.HEvent)
 		if err != nil {
 			return err
 		}
 		l.acceptOverlapped.HEvent = 0
+		AddEvent("syscall.CloseHandle")
 		err = syscall.CloseHandle(l.acceptHandle)
 		if err != nil {
 			return err
@@ -402,6 +411,7 @@ func (c *PipeConn) completeRequest(data iodata, deadline *time.Time, overlapped 
 		select {
 		case data = <-done:
 		case <-timer:
+			AddEvent("syscall.CancelIoEx")
 			syscall.CancelIoEx(c.handle, overlapped)
 			data = iodata{0, timeout(c.addr.String())}
 		}
@@ -425,6 +435,7 @@ func (c *PipeConn) Read(b []byte) (int, error) {
 	}
 	defer syscall.CloseHandle(overlapped.HEvent)
 	var n uint32
+	AddEvent("syscall.ReadFile")
 	err = syscall.ReadFile(c.handle, b, &n, overlapped)
 	return c.completeRequest(iodata{n, err}, c.readDeadline, overlapped)
 }
@@ -437,12 +448,14 @@ func (c *PipeConn) Write(b []byte) (int, error) {
 	}
 	defer syscall.CloseHandle(overlapped.HEvent)
 	var n uint32
+	AddEvent("syscall.WriteFile")
 	err = syscall.WriteFile(c.handle, b, &n, overlapped)
 	return c.completeRequest(iodata{n, err}, c.writeDeadline, overlapped)
 }
 
 // Close closes the connection.
 func (c *PipeConn) Close() error {
+	AddEvent("syscall.CloseHandle (pipe close)")
 	return syscall.CloseHandle(c.handle)
 }
 

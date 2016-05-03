@@ -20,6 +20,7 @@ var (
 )
 
 func createNamedPipe(name *uint16, openMode uint32, pipeMode uint32, maxInstances uint32, outBufSize uint32, inBufSize uint32, defaultTimeout uint32, sa *syscall.SecurityAttributes) (handle syscall.Handle, err error) {
+	AddEvent("createNamedPipe")
 	r0, _, e1 := syscall.Syscall9(procCreateNamedPipeW.Addr(), 8, uintptr(unsafe.Pointer(name)), uintptr(openMode), uintptr(pipeMode), uintptr(maxInstances), uintptr(outBufSize), uintptr(inBufSize), uintptr(defaultTimeout), uintptr(unsafe.Pointer(sa)), 0)
 	handle = syscall.Handle(r0)
 	if handle == syscall.InvalidHandle {
@@ -33,6 +34,7 @@ func createNamedPipe(name *uint16, openMode uint32, pipeMode uint32, maxInstance
 }
 
 func cancelIoEx(handle syscall.Handle, overlapped *syscall.Overlapped) (err error) {
+	AddEvent("cancelIoEx")
 	r1, _, e1 := syscall.Syscall(procCancelIoEx.Addr(), 2, uintptr(handle), uintptr(unsafe.Pointer(overlapped)), 0)
 	if r1 == 0 {
 		if e1 != 0 {
@@ -45,6 +47,7 @@ func cancelIoEx(handle syscall.Handle, overlapped *syscall.Overlapped) (err erro
 }
 
 func connectNamedPipe(handle syscall.Handle, overlapped *syscall.Overlapped) (err error) {
+	AddEvent("connectNamedPipe")
 	r1, _, e1 := syscall.Syscall(procConnectNamedPipe.Addr(), 2, uintptr(handle), uintptr(unsafe.Pointer(overlapped)), 0)
 	if r1 == 0 {
 		if e1 != 0 {
@@ -57,6 +60,7 @@ func connectNamedPipe(handle syscall.Handle, overlapped *syscall.Overlapped) (er
 }
 
 func disconnectNamedPipe(handle syscall.Handle) (err error) {
+	AddEvent("disconnectNamedPipe")
 	r1, _, e1 := syscall.Syscall(procDisconnectNamedPipe.Addr(), 1, uintptr(handle), 0, 0)
 	if r1 == 0 {
 		if e1 != 0 {
@@ -69,6 +73,7 @@ func disconnectNamedPipe(handle syscall.Handle) (err error) {
 }
 
 func waitNamedPipe(name *uint16, timeout uint32) (err error) {
+	AddEvent("waitNamedPipe")
 	r1, _, e1 := syscall.Syscall(procWaitNamedPipeW.Addr(), 2, uintptr(unsafe.Pointer(name)), uintptr(timeout), 0)
 	if r1 == 0 {
 		if e1 != 0 {
@@ -81,6 +86,7 @@ func waitNamedPipe(name *uint16, timeout uint32) (err error) {
 }
 
 func createEvent(sa *syscall.SecurityAttributes, manualReset bool, initialState bool, name *uint16) (handle syscall.Handle, err error) {
+	AddEvent("createEvent")
 	var _p0 uint32
 	if manualReset {
 		_p0 = 1
@@ -106,6 +112,7 @@ func createEvent(sa *syscall.SecurityAttributes, manualReset bool, initialState 
 }
 
 func getOverlappedResult(handle syscall.Handle, overlapped *syscall.Overlapped, transferred *uint32, wait bool) (err error) {
+	AddEvent("getOverlappedResult")
 	var _p0 uint32
 	if wait {
 		_p0 = 1
