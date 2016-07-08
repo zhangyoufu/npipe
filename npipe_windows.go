@@ -451,7 +451,7 @@ func (c *PipeConn) Close() error {
 	if c.closed {
 		return nil
 	}
-	closed = true
+	c.closed = true
 	return syscall.CloseHandle(c.handle)
 }
 
