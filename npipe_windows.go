@@ -458,7 +458,7 @@ func (c *PipeConn) Close() error {
 	c.closedMutex.Lock()
 	defer c.closedMutex.Unlock()
 	if c.closed {
-		return nil
+		return PipeError{fmt.Sprintf("Attempt to close a closed socked (handle %v)", c.handle), false}
 	}
 	c.closed = true
 	return syscall.CloseHandle(c.handle)
