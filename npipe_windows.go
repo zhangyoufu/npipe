@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"runtime"
 	"sync"
 	"syscall"
 	"time"
@@ -227,7 +228,9 @@ func dial(address string, timeout uint32) (*PipeConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &PipeConn{handle: handle, addr: PipeAddr(address)}, nil
+	ret := &PipeConn{handle: handle, addr: PipeAddr(address)}
+	runtime.SetFinalizer(ret, (*PipeConn).Close)
+	return ret, nil
 }
 
 // Listen returns a new PipeListener that will listen on a pipe with the given
@@ -243,10 +246,12 @@ func Listen(address string) (*PipeListener, error) {
 		return nil, err
 	}
 
-	return &PipeListener{
+	ret := &PipeListener{
 		addr:   PipeAddr(address),
 		handle: handle,
-	}, nil
+	}
+	runtime.SetFinalizer(ret, (*PipeListener).Close)
+	return ret, nil
 }
 
 // PipeListener is a named pipe listener. Clients should typically
